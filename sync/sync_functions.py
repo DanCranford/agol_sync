@@ -108,18 +108,20 @@ def parse_json_response(json_response):
         if suc_del == False:
             errors+="Delete Errors: "+','.join(fails_del)+" | "
             
-    return (suc_total,errors)
+        return (suc_total,errors)
+    else:
+        return(True,None)
     
 
 def applyUpdates(syncJSONedits,destlayer,loglist):
     import time
     '''by layer: needs to take sync object and go into index
     syncJSONedits needs to be UPDjson['edits'][INDEX]['features']'''
-    JSONupdates = syncJSONedits['updates']
+    JSONupdates = syncJSONedits['updates'].copy()
     for feature in JSONupdates:
         feature['attributes']['GlobalID']='{'+feature['attributes']['GlobalID']+'}'
 
-    JSONadds = syncJSONedits['adds']
+    JSONadds = syncJSONedits['adds'].copy()
     
     JSONdeletes = []
     for glob in syncJSONedits['deleteIds']:
@@ -131,7 +133,35 @@ def applyUpdates(syncJSONedits,destlayer,loglist):
     print("\tUpdates: "+str(len(JSONupdates)))
     print("\tDeletes: "+str(len(JSONdeletes)))
     try:
-        results  = destlayer.edit_features(adds=JSONadds,updates=JSONupdates,deletes=JSONdeletestring,use_global_ids=True,rollback_on_failure=False)
+        #XXX
+        if len(JSONadds)>0 and len(JSONupdates)>0 and len(JSONdeletes)>0:
+            results  = destlayer.edit_features(adds=JSONadds,updates=JSONupdates,deletes=JSONdeletestring,use_global_ids=True,rollback_on_failure=False)
+        #XXO    
+        elif len(JSONadds)>0 and len(JSONupdates)>0 and len(JSONdeletes)==0:
+            results  = destlayer.edit_features(adds=JSONadds,updates=JSONupdates,use_global_ids=True,rollback_on_failure=False)
+        #OXX
+        elif len(JSONadds)==0 and len(JSONupdates)>0 and len(JSONdeletes)>0:
+            results  = destlayer.edit_features(updates=JSONupdates,deletes=JSONdeletestring,use_global_ids=True,rollback_on_failure=False)
+        #XOX
+        elif len(JSONadds)>0 and len(JSONupdates)==0 and len(JSONdeletes)>0:
+            results  = destlayer.edit_features(adds=JSONadds,deletes=JSONdeletestring,use_global_ids=True,rollback_on_failure=False) 
+            
+        #XOO
+        elif len(JSONadds)>0 and len(JSONupdates)==0 and len(JSONdeletes)==0:
+            results  = destlayer.edit_features(adds=JSONadds,use_global_ids=True,rollback_on_failure=False)
+        #OXO
+        elif len(JSONadds)==0 and len(JSONupdates)>0 and len(JSONdeletes)==0:
+            results  = destlayer.edit_features(updates=JSONupdates,use_global_ids=True,rollback_on_failure=False)            
+        #OOX
+        elif len(JSONadds)==0 and len(JSONupdates)==0 and len(JSONdeletes)>0:
+            results  = destlayer.edit_features(deletes=JSONdeletestring,use_global_ids=True,rollback_on_failure=False)
+        else:
+            results = {'addResults':[],'updateResults':[],'deleteResults':[]}
+
+
+            
+   
+            
         (success,errors) = parse_json_response(results)
         loglist.append([destlayer.properties.name,time.strftime("%m/%d/%Y %H:%M"),len(JSONadds),len(JSONupdates),len(JSONdeletes),success,errors])
         return results
@@ -140,10 +170,38 @@ def applyUpdates(syncJSONedits,destlayer,loglist):
         outresults={'addResults':[],'updateResults':[],'deleteResults':[]}
         step_add(JSONadds,destlayer,2000,outresults)
         step_update(JSONupdates,destlayer,2000,outresults)
-        step_delete(destlayer,JSONdeletes,outresults)
+        step_delete(destlayer,JSONdeletes,1000,outresults)
         
         (success,errors) = parse_json_response(outresults)
         loglist.append([destlayer.properties.name,time.strftime("%m/%d/%Y %H:%M"),len(JSONadds),len(JSONupdates),len(JSONdeletes),success,errors])
         return outresults
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
