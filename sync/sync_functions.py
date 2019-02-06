@@ -111,7 +111,15 @@ def parse_json_response(json_response):
         return (suc_total,errors)
     else:
         return(True,None)
-    
+
+def build_att_only_updates(features,list_of_atts):
+    result = []
+    for feature in features:
+        temp = {'attributes':{'GlobalID':feature.get_value('GlobalID')}}
+        for att in list_of_atts:
+            temp['attributes'][att]=feature.get_value(att)
+        result.append(temp)
+    return result     
 
 def applyUpdates(syncJSONedits,destlayer,loglist):
     import time
@@ -157,11 +165,7 @@ def applyUpdates(syncJSONedits,destlayer,loglist):
             results  = destlayer.edit_features(deletes=JSONdeletestring,use_global_ids=True,rollback_on_failure=False)
         else:
             results = {'addResults':[],'updateResults':[],'deleteResults':[]}
-
-
-            
-   
-            
+          
         (success,errors) = parse_json_response(results)
         loglist.append([destlayer.properties.name,time.strftime("%m/%d/%Y %H:%M"),len(JSONadds),len(JSONupdates),len(JSONdeletes),success,errors])
         return results
