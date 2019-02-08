@@ -1,6 +1,7 @@
 def delta_analysis(parent_layer,child_layer,child_sde=True,edited_field='Edited',return_features = True):
     '''checks and generates adds/updates/deletes for
     parent and child layers.  designed for agol to sde sync'''
+    from pandas import isna
     print("Getting Sync Deltas for:",parent_layer,'to',child_layer)
     
     glob_field_parent = parent_layer.properties.globalIdField
@@ -13,8 +14,13 @@ def delta_analysis(parent_layer,child_layer,child_sde=True,edited_field='Edited'
     df_parent = parent_layer.query(out_fields = ','.join(parent_out_fields),return_geometry=False).df
     df_parent['JOINER']=df_parent[glob_field_parent]
     
-    
-    child_out_fields = [glob_field_child,edited_field.upper()]
+    if child_sde:
+        child_edited_field = edited_field.upper()
+    else:
+        child_edited_field = edited_field
+        
+        
+    child_out_fields = [glob_field_child,child_edited_field]
     df_child = child_layer.query(out_fields = ','.join(child_out_fields),return_geometry=False).df
     
     if child_sde:
@@ -26,12 +32,29 @@ def delta_analysis(parent_layer,child_layer,child_sde=True,edited_field='Edited'
     
     df_outer = df_parent.merge(df_child,on='JOINER',how='outer',suffixes=('_P','_C'))
     
+    globs_adds = df_outer[isna(df_outer[glob_field_child])][glob_field_parent].tolist()
+    globs_deletes = df_outer[isna(df_outer[glob_field_parent])][glob_field_child].tolist()    
+    globs_updates = df_outer[df_outer['Edited']>df_outer['EDITED']]['GlobalID'].tolist()
     
+    print('\tAdds:'+str(len(globs_adds)))
+    print('\tUpdates:'+str(len(globs_updates)))
+    print('\tDeletes:'+str(len(globs_deletes)))    
     
+    if return_features:
+        if count_parent == count_child+len(globs_adds)-len(globs_deletes):
+            print("Fetching all the features...")
+            all_parent_features = parent_layer.query().features
     
-    
-    
-    return(df_outer)
+            feats_adds = [feature for feature in all_parent_features if feature.get_value(glob_field_parent) in globs_adds]
+            feats_updates = [feature for feature in all_parent_features if feature.get_value(glob_field_parent) in globs_updates]
+            
+            if child_sde:
+                for feature in feats_adds+feats_updates:
+                    feature.set_value(glob_field_parent,'{'+feature.get_value(glob_field_parent).upper()+'}')
+
+            return(feats_adds,feats_updates,globs_deletes)
+        else:
+            raise Exception('Somethings Wrong')    
 
 
 
@@ -52,49 +75,3 @@ def delta_analysis(parent_layer,child_layer,child_sde=True,edited_field='Edited'
 
 
 
-
-    
-#    all_glob_parent = [feature.get_value(glob_field_parent) for feature in fset_parent.features]
-#    
-#
-#        
-#    child_adds = [glob for glob in all_glob_parent if glob not in all_glob_child]
-#    child_updates = [glob for glob in all_glob_parent if glob in all_glob_child]
-#    
-#    child_deletes = [glob for glob in all_glob_child if glob not in all_glob_parent]
-#    
-#    print('Adds:',len(feats_adds))
-#    print('Updates',len(feats_updates))
-#    print('Deletes',len(child_deletes))
-#    
-#    if count_parent == count_child+len(child_adds)-len(child_deletes):
-#        
-#        if return_features:
-#        print("Fetching all the features...")
-#            all_parent_features = parent_layer.query().features
-#    
-#            feats_adds = [feature for feature in all_parent_features if feature.get_value(glob_field_parent) in child_adds]
-#            feats_updates = [feature for feature in all_parent_features if feature.get_value(glob_field_parent) in child_updates]
-#            
-#            if child_sde:
-#                for feature in feats_adds+feats_updates:
-#                    feature.set_value(glob_field_parent,'{'+feature.get_value(glob_field_parent).upper()+'}')        
-#            if child_sde:
-#                child_deletes_format = ['{'+glob.upper()+'}' for glob in child_deletes]
-#    #            query_deletes = glob_field_child+""" IN ('"""+"""','""".join(child_deletes_format)+"""')"""
-#    #        else:
-#    #            query_deletes = glob_field_child+""" IN ('"""+"""','""".join(child_deletes)+"""')"""
-#        print('Adds:',len(feats_adds))
-#        print('Updates',len(feats_updates))
-#        print('Deletes',len(child_deletes))
-#            return(feats_adds,feats_updates,child_deletes_format)
-#    else:
-#        raise Exception('Somethings Wrong')
-        
-        
-flc_agol_gtmarkers_v2 = arcgis.features.FeatureLayerCollection('https://services3.arcgis.com/zqOoSc3llV8uXFYF/arcgis/rest/services/GT_Markers_v2/FeatureServer',WEVMAPS)
-     
-lyr_agol_lidr = flc_agol_gtmarkers_v2.layers[1]
-lyr_agol_nmrk = flc_agol_gtmarkers_v2.layers[2]
-lyr_agol_exrr = flc_agol_gtmarkers_v2.layers[3]
-lyr_agol_emng = flc_agol_gtmarkers_v2.layers[4]
