@@ -1,7 +1,7 @@
 def delta_analysis(parent_layer,child_layer,child_sde=True,edited_field='Edited',return_features = True):
     '''checks and generates adds/updates/deletes for
     parent and child layers.  designed for agol to sde sync'''
-    from pandas import isna
+    from pandas import isna,Timedelta
     print("Getting Sync Deltas for:",parent_layer,'to',child_layer)
     
     glob_field_parent = parent_layer.properties.globalIdField
@@ -11,7 +11,7 @@ def delta_analysis(parent_layer,child_layer,child_sde=True,edited_field='Edited'
     count_child = child_layer.query(return_count_only=True)
     
     parent_out_fields = [glob_field_parent,edited_field]
-    df_parent = parent_layer.query(out_fields = ','.join(parent_out_fields),return_geometry=False).df
+    df_parent = parent_layer.query(out_fields = ','.join(parent_out_fields),return_geometry=False).sdf
     df_parent['JOINER']=df_parent[glob_field_parent]
     
     if child_sde:
@@ -21,7 +21,7 @@ def delta_analysis(parent_layer,child_layer,child_sde=True,edited_field='Edited'
         
         
     child_out_fields = [glob_field_child,child_edited_field]
-    df_child = child_layer.query(out_fields = ','.join(child_out_fields),return_geometry=False).df
+    df_child = child_layer.query(out_fields = ','.join(child_out_fields),return_geometry=False).sdf
     
     if child_sde:
         df_child['JOINER']=(df_child[glob_field_child].str.lower()).str.replace('{','').str.replace('}','')
@@ -34,11 +34,15 @@ def delta_analysis(parent_layer,child_layer,child_sde=True,edited_field='Edited'
     
     globs_adds = df_outer[isna(df_outer[glob_field_child])][glob_field_parent].tolist()
     globs_deletes = df_outer[isna(df_outer[glob_field_parent])][glob_field_child].tolist()    
-    globs_updates = df_outer[df_outer['Edited']>df_outer['EDITED']]['GlobalID'].tolist()
+    #globs_updates = df_outer[df_outer[edited_field]>df_outer[child_edited_field]]['GlobalID'].tolist()
+    
+    globs_updates = df_outer[df_outer[edited_field]-df_outer[child_edited_field]>Timedelta(1, 's')]['GlobalID'].tolist()
+
     
     print('\tAdds:'+str(len(globs_adds)))
     print('\tUpdates:'+str(len(globs_updates)))
-    print('\tDeletes:'+str(len(globs_deletes)))    
+    print('\tDeletes:'+str(len(globs_deletes)))   
+    
     
     if return_features:
         if count_parent == count_child+len(globs_adds)-len(globs_deletes):
@@ -58,6 +62,7 @@ def delta_analysis(parent_layer,child_layer,child_sde=True,edited_field='Edited'
 
 
 
+    
 
 
 
@@ -74,4 +79,34 @@ def delta_analysis(parent_layer,child_layer,child_sde=True,edited_field='Edited'
 
 
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
