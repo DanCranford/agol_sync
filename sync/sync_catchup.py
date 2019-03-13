@@ -1,7 +1,8 @@
-def delta_analysis(parent_layer,child_layer,child_sde=True,edited_field='Edited',return_features = True):
+def delta_analysis(parent_layer,child_layer,child_sde=True,edited_field='Edited',return_features = True, log_list = []):
     '''checks and generates adds/updates/deletes for
     parent and child layers.  designed for agol to sde sync'''
     from pandas import isna,Timedelta
+    from time import strftime
     print("Getting Sync Deltas for:",parent_layer,'to',child_layer)
     
     glob_field_parent = parent_layer.properties.globalIdField
@@ -42,7 +43,7 @@ def delta_analysis(parent_layer,child_layer,child_sde=True,edited_field='Edited'
     print('\tAdds:'+str(len(globs_adds)))
     print('\tUpdates:'+str(len(globs_updates)))
     print('\tDeletes:'+str(len(globs_deletes)))   
-    
+    log_list.append([child_layer.properties.name, strftime("%m/%d/%Y %H:%M"),len(globs_adds),len(globs_updates),len(globs_deletes)])
     
     if return_features:
         if count_parent == count_child+len(globs_adds)-len(globs_deletes):
@@ -59,6 +60,7 @@ def delta_analysis(parent_layer,child_layer,child_sde=True,edited_field='Edited'
             return(feats_adds,feats_updates,globs_deletes)
         else:
             raise Exception('Somethings Wrong')    
+
 
 
 
