@@ -75,6 +75,29 @@ def replica_sync(flc,replica_id,dump_folder):
     data_dump_month(flc,json_updates,dump_folder)
     return json_updates
 
+def replica_async(flc,replica_id,dump_folder):
+    """for sync of specific replica
+    need to have a FeatureLayerCollection object and a replica ID
+    always load this into a variable - for example:
+    MyUpdates = replicaSync(FeatureLayerCollection,'l123lk2j45lk3')"""
+    server_gens = flc.replicas.get(replica_id)['layerServerGens']
+    url = flc.replicas.synchronize(replica_id = replica_id,
+                    transport_type='esriTransportTypeEmbedded', 
+                    replica_server_gen = None, 
+                    return_ids_for_adds = False,
+                    edits = None,
+                    return_attachment_databy_url = False,
+                    asynchronous = True, 
+                    sync_direction = 'download',
+                    sync_layers=server_gens,
+                    edits_upload_id=None, 
+                    edits_upload_format=None,  
+                    data_format='json',
+                    rollback_on_failure=True)
+    #data_dump_month(flc,json_updates,dump_folder)
+    return url
+
+
 def parse_json_response(json_response):
     suc_add = True
     fails_add = []
