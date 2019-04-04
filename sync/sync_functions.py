@@ -257,6 +257,57 @@ def apply_edits(dest_layer,adds,updates,delete_ids):
 
 
 
+def set_up_sync_replica(flc, rep_name, layers):
+    rep = flc.replicas.create(replica_name=rep_name,
+               layers=layers,
+               layer_queries=None,
+               geometry_filter=None,
+               replica_sr = flc.properties.spatialReference,
+               transport_type='esriTransportTypeEmbedded',
+               return_attachments=False,
+               return_attachments_databy_url=False,
+               asynchronous=False,
+               attachments_sync_direction='none',
+               sync_model='perLayer',
+               data_format='json',
+               replica_options=None,
+               wait=False,
+               out_path=None,
+               sync_direction='download',
+               target_type='client')
+    return rep
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -11,6 +11,7 @@ def get_attachments_del(layer,topfolder):
     import urllib
     all_attachments = layer.attachments.search()
     errord = []
+    print("Total Attachments: "+str(len(all_attachments)))
     for attach in all_attachments:
         try:
             glob = attach['PARENTGLOBALID']
