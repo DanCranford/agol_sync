@@ -36,6 +36,7 @@ def get_attachments_del(layer,topfolder):
 
 
 def add_attachments(layer,topfolder):
+    import os
     errord = [] 
     exist_attachs = [(attachment['PARENTGLOBALID'],attachment['NAME']) for attachment in layer.attachments.search()]
     for root,dirs,files in os.walk(topfolder):

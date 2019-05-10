@@ -74,18 +74,23 @@ def find_edited_field(layer):
 
 
 
-def delta_analysis1(parent_layer,child_layer,child_sde=True,return_features = True, log_list = []):
+def delta_analysis1(parent_layer,child_layer,child_sde=True,return_features = True, log_list = [], edited_field = None, child_edited_field = None):
     '''checks and generates adds/updates/deletes for
     parent and child layers.  designed for agol to sde sync'''
     from pandas import isna,Timedelta
     from time import strftime
     print("Getting Sync Deltas for:",parent_layer,'to',child_layer)
     
+    
     glob_field_parent = parent_layer.properties.globalIdField
     glob_field_child = child_layer.properties.globalIdField
     
-    edited_field = find_edited_field(parent_layer)
-    child_edited_field = find_edited_field(child_layer)
+    if edited_field == None:
+        edited_field = parent_layer.properties.editFieldsInfo['editDateField']
+    if child_edited_field == None and child_sde==True:
+        child_edited_field = edited_field.upper()
+    elif child_edited_field == None and child_sde==False:
+        child_edited_field = edited_field
     
     count_parent = parent_layer.query(return_count_only=True)
     count_child = child_layer.query(return_count_only=True)
