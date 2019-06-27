@@ -143,8 +143,7 @@ def delta_analysis1(parent_layer,child_layer,child_sde=True,return_features = Tr
             return(feats_adds,feats_updates,globs_deletes)
         else:
             raise Exception('Somethings Wrong')    
-    else:
-        return(globs_adds,globs_updates,globs_deletes)
+
 
 
 

@@ -20,20 +20,26 @@ def step_update(dataset,layer,step_number=2000,results={'addResults':[],'updateR
     return results
 
 
-def step_add(dataset,layer,step_number=2000,results={'addResults':[],'updateResults':[],'deleteResults':[]}):
+def step_add(dataset,layer,step_number=2000,results={'addResults':[],'updateResults':[],'deleteResults':[]},use_global_ids = True):
     start=0    
     print(layer.properties.name,"- Adds")
     while start< len(dataset):
         print(start,start+step_number)
-        results['addResults']+=(layer.edit_features(adds=dataset[start:start+step_number],use_global_ids=True,rollback_on_failure=False)['addResults'])
+        if use_global_ids:
+            results['addResults']+=(layer.edit_features(adds=dataset[start:start+step_number],use_global_ids=True,rollback_on_failure=False)['addResults'])
+        else:
+            results['addResults']+=(layer.edit_features(adds=dataset[start:start+step_number],rollback_on_failure=False)['addResults'])
+       
         start+=step_number
     return results
+
 
 
         
 def data_dump_month(flc,data,top_folder):
     import os
     import time
+    import json
     '''Sub Function for ReplicaSYNC - writes sync data to text file.
     Will be useful for getting edits in case of errors
         -FLC: Feature Layer Collection - Used only for naming file
@@ -248,7 +254,7 @@ def apply_edits(dest_layer,adds,updates,delete_ids):
         step_add(adds,dest_layer,2000,outresults)
         step_update(updates,dest_layer,2000,outresults)
         step_delete(dest_layer,delete_ids,1000,outresults)
-        return results
+        return outresults
 
 
 
@@ -277,50 +283,25 @@ def set_up_sync_replica(flc, rep_name, layers):
                target_type='client')
     return rep
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+def set_up_async_replica(flc, rep_name, layers):
+    rep = flc.replicas.create(replica_name=rep_name,
+               layers=layers,
+               layer_queries=None,
+               geometry_filter=None,
+               replica_sr = flc.properties.spatialReference,
+               transport_type='esriTransportTypeUrl',
+               return_attachments=False,
+               return_attachments_databy_url=False,
+               asynchronous=True,
+               attachments_sync_direction='none',
+               sync_model='perLayer',
+               data_format='json',
+               replica_options=None,
+               wait=True,
+               out_path=None,
+               sync_direction='download',
+               target_type='client')
+    return rep
 
 
 
