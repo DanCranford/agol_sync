@@ -171,7 +171,9 @@ def compare_geometries(shape_series_1, shape_series_2):
         out_list.append(shape[0].equals(shape[1]))
     return pd.Series(out_list)
 
-def deltas_no_edit_tracking(parent_layer, child_layer, return_features=False):
+
+
+def deltas_no_edit_tracking(parent_layer, child_layer, return_features=False, compare_geoms=False):
     '''
     meant for agol-to-agol sync with no replicas or edit-tracking.
     does an analysis of values to find updated records
@@ -210,7 +212,10 @@ def deltas_no_edit_tracking(parent_layer, child_layer, return_features=False):
             results = pd.Series(False)
             pass
         elif column == shape_column:
-            results = ~compare_geometries(df_inner[f"{shape_column}_P"], df_inner[f"{shape_column}_C"])
+            if compare_geoms:
+                results = ~compare_geometries(df_inner[f"{shape_column}_P"], df_inner[f"{shape_column}_C"])
+            else:
+                results = pd.Series(False)
         else:
             results = find_differences_merge_df(df_inner, column)
 #        if True in results.tolist():
