@@ -196,8 +196,8 @@ def deltas_no_edit_tracking(parent_layer, child_layer, return_features=False):
     
     df_outer = df_parent.merge(df_child,on='JOINER',how='outer',suffixes=('_P','_C'))
     adds = df_parent[df_parent[glob_field_parent].isin(\
-                     df_outer[pd.isna(df_outer[f"{glob_field_parent}_C"])][f"{glob_field_parent}_P"])]\
-                .drop(columns=['OBJECTID','JOINER'])
+                     df_outer[pd.isna(df_outer[f"{glob_field_parent}_C"])][f"{glob_field_parent}_P"])]
+#                .drop(columns=['OBJECTID','JOINER'])
     globs_adds = adds[glob_field_parent].tolist()
     globs_deletes = df_outer[pd.isna(df_outer[f"{glob_field_child}_P"])][f"{glob_field_parent}_C"].tolist()
     
@@ -217,20 +217,27 @@ def deltas_no_edit_tracking(parent_layer, child_layer, return_features=False):
 #            print(column)
         df_inner['edit'] = df_inner['edit'] | results
     updates = df_parent[df_parent[glob_field_parent].isin(\
-                        df_inner[df_inner['edit']][f"{glob_field_parent}_P"])]\
-                    .drop(columns=['OBJECTID','JOINER'])
+                        df_inner[df_inner['edit']][f"{glob_field_parent}_P"])]
+#                    .drop(columns=['OBJECTID','JOINER'])
     globs_updates = updates[glob_field_parent].tolist()
     if return_features:
+        if adds.shape[0]>0:
+            feats_adds = parent_layer.query(object_ids=",".join([str(i) for i in adds[parent_layer.properties.objectIdField].tolist()])).features
+        else:
+            feats_adds = []
+        if updates.shape[0]>0:
+            feats_updates = parent_layer.query(object_ids=",".join([str(i) for i in updates[parent_layer.properties.objectIdField].tolist()])).features
+        else:
+            feats_updates = []
         return({
-            "adds": adds,
-            "updates": updates,
+            "adds": feats_adds,
+            "updates": feats_updates,
             "deletes": globs_deletes})
     else:
         return({
                 "adds": globs_adds,
                 "updates": globs_updates,
                 "deletes": globs_deletes})
-
     
     
 def make_feats_the_hard_way(df):
