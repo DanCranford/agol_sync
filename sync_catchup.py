@@ -233,10 +233,17 @@ def deltas_no_edit_tracking(parent_layer, child_layer, return_features=False):
 
     
     
+def make_feats_the_hard_way(df):
+    feats = df[[col for col in df.columns if col != 'SHAPE']]\
+        .spatial.to_featureset().features
+    geoms = df['SHAPE'].tolist()
+    outers = []
+    for a, g in list(zip(feats, geoms)):
+        d = a.as_dict
+        d['geometry'] = g
+        outers.append(d)
     
-    
-    
-    
+    return outers    
     
     
     
