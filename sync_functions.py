@@ -213,7 +213,7 @@ def applyUpdates(syncJSONedits,destlayer,loglist):
 
 
 
-def apply_edits(dest_layer,adds,updates,delete_ids):
+def apply_edits(dest_layer, adds, updates, delete_ids, chunk_size=1000):
     delete_string= """['"""+"""','""".join(delete_ids)+"""']"""
     
     print("====="+dest_layer.properties.name+"=====")
@@ -251,9 +251,9 @@ def apply_edits(dest_layer,adds,updates,delete_ids):
     except:
         print('error - trying to step through process')
         outresults={'addResults':[],'updateResults':[],'deleteResults':[]}
-        step_add(adds,dest_layer,2000,outresults)
-        step_update(updates,dest_layer,2000,outresults)
-        step_delete(dest_layer,delete_ids,1000,outresults)
+        step_add(adds, dest_layer, chunk_size, outresults)
+        step_update(updates, dest_layer, chunk_size, outresults)
+        step_delete(dest_layer, delete_ids, chunk_size, outresults)
         return outresults
 
 
