@@ -1,3 +1,5 @@
+import pandas as pd
+
 def delta_analysis(parent_layer,child_layer,child_sde=True,edited_field='Edited',return_features = True, log_list = []):
     '''checks and generates adds/updates/deletes for
     parent and child layers.  designed for agol to sde sync'''
@@ -156,7 +158,78 @@ def delta_analysis1(parent_layer,child_layer,child_sde=True,return_features = Tr
 
 
 
+def find_differences_merge_df(merged_df, column):
+    return ((merged_df[f"{column}_P"] != merged_df[f"{column}_C"]) \
+            & (pd.notna(merged_df[f"{column}_P"]) & pd.notna(merged_df[f"{column}_C"]))) \
+            | (pd.isna(merged_df[f"{column}_P"]) & pd.notna(merged_df[f"{column}_C"])) \
+            | (pd.notna(merged_df[f"{column}_P"]) & pd.isna(merged_df[f"{column}_C"]))
 
+def compare_geometries(shape_series_1, shape_series_2):
+    shapes = list(zip(shape_series_1.tolist(), shape_series_2.tolist()))
+    out_list = []
+    for shape in shapes:
+        out_list.append(shape[0].equals(shape[1]))
+    return pd.Series(out_list)
+
+def deltas_no_edit_tracking(parent_layer, child_layer, return_features=False):
+    '''
+    meant for agol-to-agol sync with no replicas or edit-tracking.
+    does an analysis of values to find updated records
+    
+    parent_layer : arcgis.features.FeatureLayer
+        layer from which changes come
+    child_layer : arcgis.features.FeatureLayer
+        layer to which changes will go
+    return_features : bool
+        if True, return dataframes with data, if false return only globalids
+    
+    
+    '''
+    glob_field_parent = parent_layer.properties.globalIdField
+    glob_field_child = child_layer.properties.globalIdField
+    
+    df_parent = parent_layer.query(return_geometry=True, as_df=True)
+    df_parent['JOINER']=df_parent[glob_field_parent]
+    
+    df_child = child_layer.query(as_df=True, return_geometry=True)
+    df_child['JOINER']=df_child[glob_field_child]
+    
+    df_outer = df_parent.merge(df_child,on='JOINER',how='outer',suffixes=('_P','_C'))
+    adds = df_parent[df_parent[glob_field_parent].isin(\
+                     df_outer[pd.isna(df_outer[f"{glob_field_parent}_C"])][f"{glob_field_parent}_P"])]\
+                .drop(columns=['OBJECTID','JOINER'])
+    globs_adds = adds[glob_field_parent].tolist()
+    globs_deletes = df_outer[pd.isna(df_outer[f"{glob_field_child}_P"])][f"{glob_field_parent}_C"].tolist()
+    
+    df_inner = df_parent.merge(df_child, 'inner', 'JOINER', suffixes=('_P','_C'))
+    df_inner['edit'] = False
+    shape_column = df_parent.dtypes[df_parent.dtypes == 'geometry'].index[0]
+
+    for column in df_parent.columns:
+        if column in [parent_layer.properties.objectIdField,'JOINER','edit']:
+            results = pd.Series(False)
+            pass
+        elif column == shape_column:
+            results = ~compare_geometries(df_inner[f"{shape_column}_P"], df_inner[f"{shape_column}_C"])
+        else:
+            results = find_differences_merge_df(df_inner, column)
+#        if True in results.tolist():
+#            print(column)
+        df_inner['edit'] = df_inner['edit'] | results
+    updates = df_parent[df_parent[glob_field_parent].isin(\
+                        df_inner[df_inner['edit']][f"{glob_field_parent}_P"])]\
+                    .drop(columns=['OBJECTID','JOINER'])
+    globs_updates = updates[glob_field_parent].tolist()
+    if return_features:
+        return({
+            "adds": adds,
+            "updates": updates,
+            "deletes": globs_deletes})
+    else:
+        return({
+                "adds": globs_adds,
+                "updates": globs_updates,
+                "deletes": globs_deletes})
 
     
     
