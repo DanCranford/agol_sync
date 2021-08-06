@@ -173,7 +173,7 @@ def compare_geometries(shape_series_1, shape_series_2):
 
 
 
-def deltas_no_edit_tracking(parent_layer, child_layer, return_features=False, compare_geoms=False):
+def deltas_no_edit_tracking(parent_layer, child_layer, return_features=False, compare_geoms=False, parent_query=None):
     '''
     meant for agol-to-agol sync with no replicas or edit-tracking.
     does an analysis of values to find updated records
@@ -190,7 +190,10 @@ def deltas_no_edit_tracking(parent_layer, child_layer, return_features=False, co
     glob_field_parent = parent_layer.properties.globalIdField
     glob_field_child = child_layer.properties.globalIdField
     
-    df_parent = parent_layer.query(return_geometry=True, as_df=True)
+    if parent_query == None:
+        df_parent = parent_layer.query(return_geometry=True, as_df=True)
+    else:
+        df_parent = parent_layer.query(parent_query, return_geometry=True, as_df=True)
     df_parent['JOINER']=df_parent[glob_field_parent]
     
     df_child = child_layer.query(as_df=True, return_geometry=True)
