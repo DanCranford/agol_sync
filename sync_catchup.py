@@ -159,10 +159,13 @@ def delta_analysis1(parent_layer,child_layer,child_sde=True,return_features = Tr
 
 
 def find_differences_merge_df(merged_df, column):
-    return ((merged_df[f"{column}_P"] != merged_df[f"{column}_C"]) \
-            & (pd.notna(merged_df[f"{column}_P"]) & pd.notna(merged_df[f"{column}_C"]))) \
-            | (pd.isna(merged_df[f"{column}_P"]) & pd.notna(merged_df[f"{column}_C"])) \
-            | (pd.notna(merged_df[f"{column}_P"]) & pd.isna(merged_df[f"{column}_C"]))
+    try:
+        return ((merged_df[f"{column}_P"] != merged_df[f"{column}_C"]) \
+                & (pd.notna(merged_df[f"{column}_P"]) & pd.notna(merged_df[f"{column}_C"]))) \
+                | (pd.isna(merged_df[f"{column}_P"]) & pd.notna(merged_df[f"{column}_C"])) \
+                | (pd.notna(merged_df[f"{column}_P"]) & pd.isna(merged_df[f"{column}_C"]))
+    except KeyError:
+        return pd.Series(False)
 
 def compare_geometries(shape_series_1, shape_series_2):
     shapes = list(zip(shape_series_1.tolist(), shape_series_2.tolist()))
