@@ -220,7 +220,10 @@ def deltas_no_edit_tracking(parent_layer, child_layer, return_features=False, co
             else:
                 results = pd.Series(False)
         else:
-            results = find_differences_merge_df(df_inner, column)
+            try:
+                results = find_differences_merge_df(df_inner, column)
+            except KeyError:
+                pass
 #        if True in results.tolist():
 #            print(column)
         df_inner['edit'] = df_inner['edit'] | results
@@ -264,6 +267,40 @@ def make_feats_the_hard_way(df):
     
     
     
+def compare_sdfs(df_parent, df_child, join_field, ignore_columns=[], compare_geoms=True):
+#    df_outer = df_parent.merge(df_child, on=join_field, how='outer',suffixes=('_P','_C'), indicator=True)
+    
+    df_adds = df_parent[~df_parent[join_field].isin(df_child[join_field])]
+    df_deletes = df_child[~df_child[join_field].isin(df_parent[join_field])]
+    
+    df_inner = df_parent.merge(df_child, 'inner', join_field, suffixes=('_P','_C'))
+    df_inner['edit'] = False
+    
+    ignore_columns.append(join_field)
+    
+    for column in df_parent.columns:
+        if column in ignore_columns:
+            results = pd.Series(False)
+            pass
+        elif column == df_parent.spatial.name:
+            if compare_geoms:
+                results = ~compare_geometries(df_inner[f"{df_parent.spatial.name}_P"], df_inner[f"{df_parent.spatial.name}_C"])
+            else:
+                results = pd.Series(False)
+        else:
+            results = find_differences_merge_df(df_inner, column)
+        print(column, results.any())
+        if results.any():
+            print(df_inner[[f"{column}_P", f"{column}_C"]][results])
+#        if True in results.tolist():
+#            print(column)
+        df_inner['edit'] = df_inner['edit'] | results
+    df_updates = df_parent[df_parent[join_field].isin(df_inner[df_inner.edit][join_field])]
+    
+    return {'adds': df_adds, 
+            'updates': df_updates, 
+            'deletes': df_deletes}
+
     
     
     
@@ -281,6 +318,37 @@ def make_feats_the_hard_way(df):
     
     
     
-    
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
