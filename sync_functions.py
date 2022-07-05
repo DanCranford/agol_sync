@@ -249,7 +249,7 @@ def apply_edits(dest_layer, adds, updates, delete_ids, chunk_size=1000, use_glob
         (success,errors) = parse_json_response(results)
         return results
     except:
-        print('error - trying to step through process')
+        print('data size too large - trying to step through process')
         outresults={'addResults':[],'updateResults':[],'deleteResults':[]}
         step_add(adds, dest_layer, chunk_size, outresults, use_global_ids=use_global_ids)
         step_update(updates, dest_layer, chunk_size, outresults, use_global_ids=use_global_ids)
