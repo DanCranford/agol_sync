@@ -1,26 +1,26 @@
-def step_delete(layer,id_list,step_number=1000,results={'addResults':[],'updateResults':[],'deleteResults':[]}):
+def step_delete(layer,id_list,step_number=1000,results={'addResults':[],'updateResults':[],'deleteResults':[]},use_global_ids = True):
     start = 0
     print(layer.properties.name,"- Deletes")
     while start< len(id_list):
         print(start,start+step_number)
         deletestring= """['"""+"""','""".join(id_list[start:start+step_number])+"""']"""
-        results['deleteResults']+=(layer.edit_features(deletes=deletestring,use_global_ids=True,rollback_on_failure=False)['deleteResults'])
+        results['deleteResults']+=(layer.edit_features(deletes=deletestring,use_global_ids=use_global_ids,rollback_on_failure=False)['deleteResults'])
         start+=step_number
     return results    
         
     
 
-def step_update(dataset,layer,step_number=2000,results={'addResults':[],'updateResults':[],'deleteResults':[]}):
+def step_update(dataset,layer,step_number=2000,results={'addResults':[],'updateResults':[],'deleteResults':[]}, use_global_ids = True):
     start=0    
     print(layer.properties.name,"- Updates")
     while start< len(dataset):
         print(start,start+step_number)
-        results['updateResults']+=(layer.edit_features(updates=dataset[start:start+step_number],use_global_ids=True,rollback_on_failure=False)['updateResults'])
+        results['updateResults']+=(layer.edit_features(updates=dataset[start:start+step_number],use_global_ids=use_global_ids,rollback_on_failure=False)['updateResults'])
         start+=step_number
     return results
 
 
-def step_add(dataset,layer,step_number=2000,results={'addResults':[],'updateResults':[],'deleteResults':[]},use_global_ids = True):
+def step_add(dataset,layer,step_number=2000,results={'addResults':[],'updateResults':[],'deleteResults':[]}, use_global_ids = True):
     start=0    
     print(layer.properties.name,"- Adds")
     while start< len(dataset):
@@ -213,7 +213,7 @@ def applyUpdates(syncJSONedits,destlayer,loglist):
 
 
 
-def apply_edits(dest_layer, adds, updates, delete_ids, chunk_size=1000):
+def apply_edits(dest_layer, adds, updates, delete_ids, chunk_size=1000, use_global_ids=True):
     delete_string= """['"""+"""','""".join(delete_ids)+"""']"""
     
     print("====="+dest_layer.properties.name+"=====")
@@ -222,38 +222,38 @@ def apply_edits(dest_layer, adds, updates, delete_ids, chunk_size=1000):
     print("\tDeletes: "+str(len(delete_ids)))
     try:
         #XXX
-        if len(adds)>0 and len(updates)>0 and len(delete_string)>0:
-            results  = dest_layer.edit_features(adds=adds,updates=updates,deletes=delete_string,use_global_ids=True,rollback_on_failure=False)
+        if len(adds)>0 and len(updates)>0 and len(delete_ids)>0:
+            results  = dest_layer.edit_features(adds=adds,updates=updates,deletes=delete_string,use_global_ids=use_global_ids,rollback_on_failure=False)
         #XXO    
-        elif len(adds)>0 and len(updates)>0 and len(delete_string)==0:
-            results  = dest_layer.edit_features(adds=adds,updates=updates,use_global_ids=True,rollback_on_failure=False)
+        elif len(adds)>0 and len(updates)>0 and len(delete_ids)==0:
+            results  = dest_layer.edit_features(adds=adds,updates=updates,use_global_ids=use_global_ids,rollback_on_failure=False)
         #OXX
-        elif len(adds)==0 and len(updates)>0 and len(delete_string)>0:
-            results  = dest_layer.edit_features(updates=updates,deletes=delete_string,use_global_ids=True,rollback_on_failure=False)
+        elif len(adds)==0 and len(updates)>0 and len(delete_ids)>0:
+            results  = dest_layer.edit_features(updates=updates,deletes=delete_string,use_global_ids=use_global_ids,rollback_on_failure=False)
         #XOX
-        elif len(adds)>0 and len(updates)==0 and len(delete_string)>0:
-            results  = dest_layer.edit_features(adds=adds,deletes=delete_string,use_global_ids=True,rollback_on_failure=False) 
+        elif len(adds)>0 and len(updates)==0 and len(delete_ids)>0:
+            results  = dest_layer.edit_features(adds=adds,deletes=delete_string,use_global_ids=use_global_ids,rollback_on_failure=False) 
             
         #XOO
-        elif len(adds)>0 and len(updates)==0 and len(delete_string)==0:
-            results  = dest_layer.edit_features(adds=adds,use_global_ids=True,rollback_on_failure=False)
+        elif len(adds)>0 and len(updates)==0 and len(delete_ids)==0:
+            results  = dest_layer.edit_features(adds=adds,use_global_ids=use_global_ids,rollback_on_failure=False)
         #OXO
-        elif len(adds)==0 and len(updates)>0 and len(delete_string)==0:
-            results  = dest_layer.edit_features(updates=updates,use_global_ids=True,rollback_on_failure=False)            
+        elif len(adds)==0 and len(updates)>0 and len(delete_ids)==0:
+            results  = dest_layer.edit_features(updates=updates,use_global_ids=use_global_ids,rollback_on_failure=False)            
         #OOX
-        elif len(adds)==0 and len(updates)==0 and len(delete_string)>0:
-            results  = dest_layer.edit_features(deletes=delete_string,use_global_ids=True,rollback_on_failure=False)
+        elif len(adds)==0 and len(updates)==0 and len(delete_ids)>0:
+            results  = dest_layer.edit_features(deletes=delete_string,use_global_ids=use_global_ids,rollback_on_failure=False)
         else:
             results = {'addResults':[],'updateResults':[],'deleteResults':[]}
           
         (success,errors) = parse_json_response(results)
         return results
     except:
-        print('error - trying to step through process')
+        print('data size too large - trying to step through process')
         outresults={'addResults':[],'updateResults':[],'deleteResults':[]}
-        step_add(adds, dest_layer, chunk_size, outresults)
-        step_update(updates, dest_layer, chunk_size, outresults)
-        step_delete(dest_layer, delete_ids, chunk_size, outresults)
+        step_add(adds, dest_layer, chunk_size, outresults, use_global_ids=use_global_ids)
+        step_update(updates, dest_layer, chunk_size, outresults, use_global_ids=use_global_ids)
+        step_delete(dest_layer, delete_ids, chunk_size, outresults, use_global_ids=use_global_ids)
         return outresults
 
 
