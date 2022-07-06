@@ -222,26 +222,26 @@ def apply_edits(dest_layer, adds, updates, delete_ids, chunk_size=1000, use_glob
     print("\tDeletes: "+str(len(delete_ids)))
     try:
         #XXX
-        if len(adds)>0 and len(updates)>0 and len(delete_string)>0:
+        if len(adds)>0 and len(updates)>0 and len(delete_ids)>0:
             results  = dest_layer.edit_features(adds=adds,updates=updates,deletes=delete_string,use_global_ids=use_global_ids,rollback_on_failure=False)
         #XXO    
-        elif len(adds)>0 and len(updates)>0 and len(delete_string)==0:
+        elif len(adds)>0 and len(updates)>0 and len(delete_ids)==0:
             results  = dest_layer.edit_features(adds=adds,updates=updates,use_global_ids=use_global_ids,rollback_on_failure=False)
         #OXX
-        elif len(adds)==0 and len(updates)>0 and len(delete_string)>0:
+        elif len(adds)==0 and len(updates)>0 and len(delete_ids)>0:
             results  = dest_layer.edit_features(updates=updates,deletes=delete_string,use_global_ids=use_global_ids,rollback_on_failure=False)
         #XOX
-        elif len(adds)>0 and len(updates)==0 and len(delete_string)>0:
+        elif len(adds)>0 and len(updates)==0 and len(delete_ids)>0:
             results  = dest_layer.edit_features(adds=adds,deletes=delete_string,use_global_ids=use_global_ids,rollback_on_failure=False) 
             
         #XOO
-        elif len(adds)>0 and len(updates)==0 and len(delete_string)==0:
+        elif len(adds)>0 and len(updates)==0 and len(delete_ids)==0:
             results  = dest_layer.edit_features(adds=adds,use_global_ids=use_global_ids,rollback_on_failure=False)
         #OXO
-        elif len(adds)==0 and len(updates)>0 and len(delete_string)==0:
+        elif len(adds)==0 and len(updates)>0 and len(delete_ids)==0:
             results  = dest_layer.edit_features(updates=updates,use_global_ids=use_global_ids,rollback_on_failure=False)            
         #OOX
-        elif len(adds)==0 and len(updates)==0 and len(delete_string)>0:
+        elif len(adds)==0 and len(updates)==0 and len(delete_ids)>0:
             results  = dest_layer.edit_features(deletes=delete_string,use_global_ids=use_global_ids,rollback_on_failure=False)
         else:
             results = {'addResults':[],'updateResults':[],'deleteResults':[]}
