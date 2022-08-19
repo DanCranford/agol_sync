@@ -117,7 +117,7 @@ def compare_attachments(in_layer, dest_layer):
     df_in = pd.DataFrame(in_layer.attachments.search())
     df_dest = pd.DataFrame(dest_layer.attachments.search())
     if df_dest.shape[0] ==0:
-        df_dest = pandas.DataFrame(columns=['PARENTGLOBALID','NAME'])
+        df_dest = pd.DataFrame(columns=['PARENTGLOBALID','NAME','GLOBALID'])
 
 
     df_feat_dest = dest_layer.query(out_fields = [dest_layer.properties.objectIdField,
