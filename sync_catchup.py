@@ -311,7 +311,74 @@ def compare_sdfs(df_parent, df_child, join_field, ignore_columns=[], compare_geo
     
     
     
+
+def find_adds_and_updates(parent_layer, child_layer):
+    '''
+    finds adds and updates from a parent layer to a child layer
+    both layers must have globalids enabled
     
+    parent_layer : arcgis.features.FeatureLayer
+        layer from which changes come
+    child_layer : arcgis.features.FeatureLayer
+        layer to which changes will go
+
+    returns
+        adds and updates as lists of features
+    
+    
+    '''
+
+    parent_globalid_field = parent_layer.properties.globalIdField
+    child_globalid_field = child_layer.properties.globalIdField
+
+    edit_fields = list(dict(parent_layer.properties.editFieldsInfo).values())
+
+    df_parent = parent_layer.query(
+        out_fields = [parent_globalid_field] + 
+            edit_fields,
+        return_geometry=False,
+        as_df=True
+        )
+
+    df_child = child_layer.query(
+        out_fields = [child_globalid_field] + 
+            edit_fields,
+        return_geometry=False,
+        as_df=True
+        )
+    
+    df_adds = df_parent[
+    ~df_parent[parent_globalid_field]
+        .isin(df_child[child_globalid_field])
+        ]
+    if len(df_adds)>0:
+        add_string = "','".join(df_adds[parent_globalid_field].tolist())
+        fset_adds = parent_layer.query(f"{parent_globalid_field} IN ('{add_string}')")
+        adds = fset_adds.features
+    else:
+        adds=[]
+    
+    df_merge = df_parent.merge(df_child, 'left', 
+                           left_on = parent_globalid_field, 
+                           right_on = child_globalid_field,
+                          suffixes=('_p','_c'))
+
+    edit_date_field = parent_layer.properties.editFieldsInfo['editDateField']
+    updated_globs = df_merge[(pandas.notna(df_merge[f"{edit_date_field}_c"]))
+                            & (df_merge[f"{edit_date_field}_p"] > df_merge[f"{edit_date_field}_c"])]\
+                        [parent_globalid_field].tolist()
+
+    df_updates = df_parent[df_parent[parent_globalid_field].isin(updated_globs)]
+
+    if updated_globs:
+        update_string = "','".join(updated_globs)
+        fset_update = parent_layer.query(f"{parent_globalid_field} IN ('{update_string}')")
+        fset_update
+    else:
+        updates = []
+    
+    return (adds, updates)
+         
     
     
     
