@@ -364,7 +364,7 @@ def find_adds_and_updates(parent_layer, child_layer):
                           suffixes=('_p','_c'))
 
     edit_date_field = parent_layer.properties.editFieldsInfo['editDateField']
-    updated_globs = df_merge[(pandas.notna(df_merge[f"{edit_date_field}_c"]))
+    updated_globs = df_merge[(pd.notna(df_merge[f"{edit_date_field}_c"]))
                             & (df_merge[f"{edit_date_field}_p"] > df_merge[f"{edit_date_field}_c"])]\
                         [parent_globalid_field].tolist()
 
