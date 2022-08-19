@@ -113,25 +113,33 @@ def compare_attachments(in_layer, dest_layer):
         list of dictionaries representing attachments needing transfer.
     '''
     import pandas as pd
+
     df_in = pd.DataFrame(in_layer.attachments.search())
     df_dest = pd.DataFrame(dest_layer.attachments.search())
-    df_in['JOINER'] = df_in['PARENTGLOBALID'] + df_in['NAME']
-    try:
-        df_dest['JOINER'] = df_dest['PARENTGLOBALID'] + df_dest['NAME']
-    except:
-        df_dest['JOINER'] = None
-        df_dest['GLOBALID']= None
-    
-    df_master = dest_layer.query(out_fields = "OBJECTID,GlobalID",  return_geometry=False).sdf
-    
-    df_merge = df_in.merge(df_dest, 'left', on='JOINER',suffixes = ('','_DEST'))\
-        .merge(df_master,'left', left_on = 'PARENTGLOBALID',right_on='GLOBALID', suffixes=('','_MASTER'))
-    
-#     df_merge['OBJECTID'] = df_merge['OBJECTID'].astype(int)
-    
+    if df_dest.shape[0] ==0:
+        df_dest = pandas.DataFrame(columns=['PARENTGLOBALID','NAME'])
+
+
+    df_feat_dest = dest_layer.query(out_fields = [dest_layer.properties.objectIdField,
+                                                    dest_layer.properties.globalIdField],
+                                    as_df=True,
+                                    return_geometry=False)
+
+
+    df_merge = df_in.merge(df_dest, 'left',
+                       on = ['PARENTGLOBALID','NAME'],
+                       suffixes=('','_DEST'))\
+                    .merge(df_feat_dest,'left',
+                        left_on = 'PARENTGLOBALID',
+                        right_on= dest_layer.properties.globalIdField,
+                        suffixes=('','_MASTER'))
+
+    df_merge.rename(columns={c : c.upper() for c in df_merge.columns}, inplace=True)
+
     return df_merge[pd.isna(df_merge['GLOBALID_DEST']) & pd.notna(df_merge['OBJECTID'])]\
-        [['NAME','PARENTGLOBALID','DOWNLOAD_URL','CONTENTTYPE','GLOBALID','OBJECTID']]\
-            .to_dict('records')
+                [['NAME','PARENTGLOBALID','DOWNLOAD_URL','CONTENTTYPE','KEYWORDS','OBJECTID']]\
+                    .to_dict('records')
+
 
 
 
